@@ -25,4 +25,4 @@ const cartSchema = new mongoose.Schema(
 
 const Cart = mongoose.model('Cart', cartSchema)
 
-export defaut Cart
+export default Cart
