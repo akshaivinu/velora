@@ -13,6 +13,7 @@ const productSchema = new mongoose.Schema(
     price: {
       type: Number,
       required: true,
+      min: 0
     },
     image: {
       type: String,
@@ -21,12 +22,17 @@ const productSchema = new mongoose.Schema(
     stock: {
       type: Number,
       required: true,
+      min: 0
     },
     sizes: {
       type: [String],
-      enum: ["xs", "s", "l", "xl"],
-      default: "xs",
+      enum: ["xs", "s", 'm', "l", "xl"],
+      default: ['m'],
     },
+    category: {
+      type: String,
+      required: true
+    }
   },
   { timestamps: true },
 );
