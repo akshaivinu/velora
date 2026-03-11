@@ -79,6 +79,11 @@ export const loginUser = async (credentials) => {
   return res.data;
 };
 
+export const createProduct = async (productData) => {
+  const res = await api.post("/products", productData);
+  return res.data;
+};
+
 export const registerUser = async (fields) => {
   const res = await api.post("/auth/register", fields);
   return res.data;

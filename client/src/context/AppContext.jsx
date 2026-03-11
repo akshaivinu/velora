@@ -15,6 +15,7 @@ import {
 
 const AppContext = createContext({
   isAuthenticated: false,
+  user: null,
   cartCount: 0,
   isCartLoading: false,
   login: async () => { },
@@ -26,6 +27,13 @@ export const AppProvider = ({ children }) => {
   const [token, setToken] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("velora_token") : null,
   );
+  const [user, setUser] = useState(() => {
+    if (typeof window !== "undefined") {
+      const savedUser = localStorage.getItem("velora_user");
+      return savedUser ? JSON.parse(savedUser) : null;
+    }
+    return null;
+  });
   const [isAuthenticated, setIsAuthenticated] = useState(Boolean(token));
   const [cartCount, setCartCount] = useState(0);
   const [isCartLoading, setIsCartLoading] = useState(false);
@@ -77,13 +85,18 @@ export const AppProvider = ({ children }) => {
     async (values) => {
       const data = await loginUser(values);
       const newToken = data.accessToken;
+      const newUser = data.user;
       if (newToken) {
         localStorage.setItem("velora_token", newToken);
         setToken(newToken);
       }
+      if (newUser) {
+        localStorage.setItem("velora_user", JSON.stringify(newUser));
+        setUser(newUser);
+      }
       return data;
     },
-    [setToken],
+    [setToken, setUser],
   );
 
   const logout = useCallback(async () => {
@@ -93,20 +106,23 @@ export const AppProvider = ({ children }) => {
       // ignore logout errors
     }
     localStorage.removeItem("velora_token");
+    localStorage.removeItem("velora_user");
     setToken(null);
+    setUser(null);
     setCartCount(0);
   }, []);
 
   const value = useMemo(
     () => ({
       isAuthenticated,
+      user,
       cartCount,
       isCartLoading,
       login,
       logout,
       refreshCart,
     }),
-    [isAuthenticated, cartCount, isCartLoading, login, logout, refreshCart],
+    [isAuthenticated, user, cartCount, isCartLoading, login, logout, refreshCart],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

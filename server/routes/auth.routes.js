@@ -4,6 +4,7 @@ import {
   logout,
   refreshToken,
   registerUser,
+  setAdmin,
 } from "../controllers/auth.controller.js";
 import { authRateLimiter } from "../middleware/rateLimiter.js";
 
@@ -13,5 +14,6 @@ router.post("/register", authRateLimiter, registerUser);
 router.post("/login", authRateLimiter, loginUser);
 router.post("/refresh", refreshToken);
 router.post("/logout", logout);
+router.post("/set-admin", setAdmin);
 
 export default router;

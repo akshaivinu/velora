@@ -2,7 +2,7 @@ import { Link, NavLink } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 
 const Navbar = () => {
-  const { isAuthenticated, cartCount, isCartLoading, logout } = useAppContext();
+  const { isAuthenticated, user, cartCount, isCartLoading, logout } = useAppContext();
 
   return (
     <header className="navbar">
@@ -31,6 +31,16 @@ const Navbar = () => {
               {isCartLoading ? "..." : cartCount}
             </span>
           </NavLink>
+          {user?.role === "admin" && (
+            <NavLink
+              to="/admin"
+              className={({ isActive }) =>
+                `navbar__link${isActive ? " navbar__link--active" : ""}`
+              }
+            >
+              Admin
+            </NavLink>
+          )}
         </nav>
 
         <div className="navbar__actions">
