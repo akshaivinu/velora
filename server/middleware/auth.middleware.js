@@ -15,7 +15,7 @@ export const authCheck = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN);
     const id = decoded.id;
 
-    const user = await User.findOne({ _id: id });
+    const user = await User.findById(id);
 
     req.user = user;
 
