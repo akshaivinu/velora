@@ -1,5 +1,4 @@
 import User from "../models/user.model.js";
-import { hashPassword } from "../utils/hashPassword.js";
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -31,12 +30,10 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    const hashedPassword = await hashPassword(password);
-
     const newUser = await User.create({
       name,
       email,
-      password: hashedPassword,
+      password,
     });
 
     return res.status(201).json({
@@ -91,10 +88,10 @@ export const loginUser = async (req, res) => {
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
       sameSite: "none",
       maxAge: 1000 * 60 * 60 * 24,
-      path: '/auth/refresh'
+      path: "/api/auth/refresh",
     });
 
     return res.status(200).json({
@@ -138,7 +135,9 @@ export const refreshToken = async (req, res) => {
         await user.save();
       }
 
-      res.clearCookie("refreshToken");
+      res.clearCookie("refreshToken", {
+        path: "/api/auth/refresh",
+      });
 
       return res.status(401).json({
         message: "Refresh token reused or invalidated; please log in again",
@@ -152,9 +151,10 @@ export const refreshToken = async (req, res) => {
 
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: "strict",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "none",
       maxAge: 1000 * 60 * 60 * 24,
+      path: "/api/auth/refresh",
     });
 
     user.refreshToken = newRefreshToken;
@@ -162,6 +162,7 @@ export const refreshToken = async (req, res) => {
 
     return res.status(200).json({
       message: "Token refreshed successfully",
+      accessToken: newAccessToken,
     });
   } catch (error) {
     return res.status(500).json({

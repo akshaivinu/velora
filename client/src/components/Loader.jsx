@@ -1,9 +1,8 @@
-import React from 'react'
+const Loader = ({ message = "Loading..." }) => (
+  <div className="loader">
+    <span className="loader__spinner" aria-hidden />
+    <p>{message}</p>
+  </div>
+);
 
-const Loader = () => {
-  return (
-    <div>Loader</div>
-  )
-}
-
-export default Loader
+export default Loader;

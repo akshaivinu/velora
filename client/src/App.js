@@ -4,23 +4,21 @@ import Home from "./pages/Home";
 import ProductPage from "./pages/ProductPage";
 import CartPage from "./pages/CartPage";
 import LoginPage from "./pages/LoginPage";
+import { AppProvider } from "./context/AppContext";
 
 function App() {
   return (
-    <div>
+    <AppProvider>
       <BrowserRouter>
-      <Navbar />
+        <Navbar />
         <Routes>
           <Route path="/" element={<Home />} />
-
-        <Route path="/product/:id" element={<ProductPage />} />
-
-        <Route path="/cart" element={<CartPage />} />
-
-        <Route path="/login" element={<LoginPage />} />
+          <Route path="/product/:id" element={<ProductPage />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/login" element={<LoginPage />} />
         </Routes>
       </BrowserRouter>
-    </div>
+    </AppProvider>
   );
 }
 
