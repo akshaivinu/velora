@@ -8,6 +8,11 @@ import {
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
+const setAccessHeader = (res, token) => {
+  res.setHeader("Authorization", `Bearer ${token}`);
+  res.setHeader("Access-Control-Expose-Headers", "Authorization");
+};
+
 export const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -82,22 +87,19 @@ export const loginUser = async (req, res) => {
 
     await user.save();
 
-    res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      maxAge: 3600,
-    });
+    setAccessHeader(res, accessToken);
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: true,
       sameSite: "none",
       maxAge: 1000 * 60 * 60 * 24,
+      path: '/auth/refresh'
     });
 
     return res.status(200).json({
       message: "Login successfull",
+      accessToken,
     });
   } catch (error) {
     return res.status(500).json({
@@ -112,31 +114,41 @@ export const refreshToken = async (req, res) => {
     const token = req.cookies.refreshToken;
 
     if (!token) {
-      return res.status(404).json({
-        message: "Inavlid Token",
+      return res.status(401).json({
+        message: "Refresh token missing",
       });
     }
 
-    const decoded = await jwt.verify(refreshToken, process.env.REFRESH_SECRET);
+    let decoded;
+
+    try {
+      decoded = jwt.verify(token, process.env.REFRESH_TOKEN);
+    } catch (verifyError) {
+      return res.status(401).json({
+        message: "Invalid refresh token",
+      });
+    }
     const id = decoded.id;
 
     const user = await User.findById(id);
 
-    if (user.refreshToken !== refreshToken) {
-      return res.status(400).json({
-        message: "Invalid token",
+    if (!user || user.refreshToken !== token) {
+      if (user) {
+        user.refreshToken = null;
+        await user.save();
+      }
+
+      res.clearCookie("refreshToken");
+
+      return res.status(401).json({
+        message: "Refresh token reused or invalidated; please log in again",
       });
     }
 
     const newAccessToken = generateAccessToken(user._id);
     const newRefreshToken = generateRefreshToken(user._id);
 
-    res.cookie("accessToken", newAccessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-      maxAge: 3600,
-    });
+    setAccessHeader(res, newAccessToken);
 
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
@@ -144,6 +156,9 @@ export const refreshToken = async (req, res) => {
       sameSite: "strict",
       maxAge: 1000 * 60 * 60 * 24,
     });
+
+    user.refreshToken = newRefreshToken;
+    await user.save();
 
     return res.status(200).json({
       message: "Token refreshed successfully",
@@ -158,13 +173,27 @@ export const refreshToken = async (req, res) => {
 
 export const logout = async (req, res) => {
   try {
+    const token = req.cookies.refreshToken;
+
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.REFRESH_TOKEN);
+        const user = await User.findById(decoded.id);
+        if (user) {
+          user.refreshToken = null;
+          await user.save();
+        }
+      } catch (verifyError) {
+        // ignore invalid token during logout
+      }
+    }
+
     res.clearCookie("accessToken");
     res.clearCookie("refreshToken");
 
-    const user = await User.findById(req.user._id);
-    await user.save();
-
-    user.refreshToken = null;
+    return res.status(200).json({
+      message: "Logged out successfully",
+    });
   } catch (error) {
     return res.status(500).json({
       message: "Internal Server Error",

@@ -2,7 +2,27 @@ import Product from "../models/product.model.js";
 
 export const getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find();
+    const { category, minPrice, page = "1", limit = "10" } = req.query;
+
+    const filter = {};
+
+    if (category) {
+      filter.category = category;
+    }
+
+    if (minPrice !== undefined) {
+      const parsedPrice = Number.parseFloat(minPrice);
+      if (Number.isFinite(parsedPrice) && parsedPrice >= 0) {
+        filter.price = { $gte: parsedPrice };
+      }
+    }
+
+    const parsedPage = Math.max(1, parseInt(page, 10) || 1);
+    const parsedLimit = Math.max(1, parseInt(limit, 10) || 10);
+
+    const products = await Product.find(filter)
+      .skip((parsedPage - 1) * parsedLimit)
+      .limit(parsedLimit);
 
     return res.status(200).json({
       products,
@@ -97,7 +117,10 @@ export const updateProduct = async (req, res) => {
       category,
     };
 
-    const product = await Product.findByIdAndUpdate(id, updateProduct, { new: true, runValidators: true });
+    const product = await Product.findByIdAndUpdate(id, updateProduct, {
+      new: true,
+      runValidators: true,
+    });
 
     return res.status(200).json({
       product,
@@ -131,4 +154,16 @@ export const deleteProduct = async (req, res) => {
       error: error.message,
     });
   }
+};
+
+export const getProductsByCategory = async (req, res) => {
+  return getAllProducts(req, res);
+};
+
+export const getProductsByMinPrice = async (req, res) => {
+  return getAllProducts(req, res);
+};
+
+export const getProductsByPageLimit = async (req, res) => {
+  return getAllProducts(req, res);
 };

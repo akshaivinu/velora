@@ -4,7 +4,11 @@ import User from "../models/user.model.js";
 
 export const authCheck = async (req, res, next) => {
   try {
-    const token = req.cookies.accessToken;
+    const authHeader = req.headers.authorization;
+    const token =
+      authHeader && authHeader.startsWith("Bearer ")
+        ? authHeader.split(" ")[1]
+        : null;
 
     if (!token) {
       return res.status(401).json({

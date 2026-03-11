@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 
 const userSchema = new mongoose.Schema(
   {
@@ -12,12 +13,12 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      match: [/^\S+@\S+\.\S+$/, "Please use a valid email"]
+      match: [/^\S+@\S+\.\S+$/, "Please use a valid email"],
     },
     password: {
       type: String,
       required: true,
-      minLength: 6
+      minLength: 6,
     },
     role: {
       type: String,
@@ -25,14 +26,13 @@ const userSchema = new mongoose.Schema(
       default: "user",
     },
     refreshToken: {
-      type: String
-    }
+      type: String,
+    },
   },
   { timestamps: true },
 );
 
 userSchema.pre("save", async function (next) {
-
   if (!this.isModified("password")) return next();
 
   const salt = await bcrypt.genSalt(10);
@@ -42,12 +42,10 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-userSchema.methods.comparePassword = async function(password) {
-  return await bcrypt.compare(password, this.password)
-}
+userSchema.methods.comparePassword = async function (password) {
+  return await bcrypt.compare(password, this.password);
+};
 
+const User = mongoose.model("User", userSchema);
 
-
-const User = mongoose.model('User', userSchema)
-
-export default User
+export default User;
